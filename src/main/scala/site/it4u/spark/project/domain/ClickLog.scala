@@ -10,5 +10,6 @@ package site.it4u.spark.project.domain
   * userAgent userAgent类型
   * terminalType 电脑端还是移动端（电脑端为0, 移动端为1）
   * operationSystemType 操作系统（0：others，Chrome：1，Safari：2，IE：3，Firefox：4，Opera：5，QQ：6，360:7，UC：8）
+  * cityName: 访问地市
   */
-case class ClickLog(ip: String, time:String, articleId:Int, statusCode:Int, urlType: Int, userAgent: String, terminalType: Int, operationSystemType: String)
+case class ClickLog(ip: String, time:String, articleId:Int, statusCode:Int, urlType: Int, userAgent: String, terminalType: Int, operationSystemType: String, cityName: String)

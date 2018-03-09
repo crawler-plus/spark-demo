@@ -11,6 +11,7 @@ object DateUtils {
 
   val YYYYMMDDHHMMSS = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss")
   val TARGET_FORMAT = FastDateFormat.getInstance("yyyyMMddHHmmss")
+  var DATE_FORMAT = FastDateFormat.getInstance("yyyyMMdd")
 
   def getTime(time: String) = {
     YYYYMMDDHHMMSS.parse(time).getTime
@@ -20,8 +21,7 @@ object DateUtils {
     TARGET_FORMAT.format(new Date(getTime(time)))
   }
 
-  def main(args: Array[String]): Unit = {
-    print(parseToMinute("2017-10-22 14:46:01"))
+  def parseToDate(time: String) = {
+    DATE_FORMAT.format(new Date(getTime(time)))
   }
-
 }

@@ -10,6 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="ipdatabase" target="1.5" />
       <module name="sparkdemo" target="1.5" />
     </bytecodeTargetLevel>
   </component>

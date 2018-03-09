@@ -4,6 +4,7 @@ import eu.bitwalker.useragentutils.UserAgent
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
+import site.it4u.project.utils.IpUtils
 import site.it4u.spark.project.dao._
 import site.it4u.spark.project.domain._
 import site.it4u.spark.project.utils.DateUtils
@@ -56,6 +57,8 @@ object StatStreamingApp {
       var articleId = 0
       // 定义url类型为0
       var urlType = 0
+      // 访问地市
+      var cityName = "unknown"
       // 如果访问首页
       if(url == "/") {
         urlType = 1;
@@ -74,37 +77,19 @@ object StatStreamingApp {
       if(url.startsWith("/stat")) {
         urlType = 4;
       }
+      val ip = infos(0)
+      cityName = IpUtils.getCity(ip)
       // 给clicklog赋值
-      ClickLog(infos(0), DateUtils.parseToMinute(infos(1)), articleId.toInt, infos(3).toInt, urlType.toInt, infos(4), terminalType, operationSystemType)
+      ClickLog(infos(0), DateUtils.parseToDate(infos(1)), articleId.toInt, infos(3).toInt, urlType.toInt, infos(4), terminalType, operationSystemType, cityName)
     }).filter(cl => cl.urlType != 0)
-
-    // 过滤出是文章的data
-    val articleCleanData = cleanData.filter(cl => cl.articleId != 0)
 
     /**
       * 打印到控制台
       */
     cleanData.print()
-    articleCleanData.print()
-
-    // 统计今天到现在为止实战课程的访问量
-    articleCleanData.map(x => {
-      // HBase rowkey设计： 20171111_88
-      (x.time.substring(0, 8) + "_" + x.articleId, 1)
-    }).reduceByKey(_+_)// 每个文章按照日期加1
-      .foreachRDD(rdd => {
-      rdd.foreachPartition(partitionRecords => {
-        val list = new ListBuffer[CourseClickCount]
-        partitionRecords.foreach(pair => {
-          list.append(CourseClickCount(pair._1, pair._2))
-        })
-        ArticleClickCountDAO.save(list)
-      })
-    })
 
     // 统计到现在为止网站访问人次
     cleanData.map(x => {
-      // HBase rowkey设计：
       ("totalClickCount", 1)
     }).reduceByKey(_+_)// 按照rowkey+1
       .foreachRDD(rdd => {
@@ -119,7 +104,6 @@ object StatStreamingApp {
 
     // 统计今天到现在为止网站电脑端和手机端访问次数
     cleanData.map(x => {
-      // HBase rowkey设计： 20171111_88
       (""+ x.terminalType, 1)
     }).reduceByKey(_+_)// 加1
       .foreachRDD(rdd => {
@@ -134,7 +118,6 @@ object StatStreamingApp {
 
     // 统计今天到现在为止网站各操作系统访问次数
     cleanData.map(x => {
-      // HBase rowkey设计：
       ("" + x.operationSystemType, 1)
     }).reduceByKey(_+_)// 加1
       .foreachRDD(rdd => {
@@ -144,6 +127,34 @@ object StatStreamingApp {
           list.append(OperationSystemCount(pair._1, pair._2))
         })
         OperationSystemDAO.save(list)
+      })
+    })
+
+    // 统计地市访问次数
+    cleanData.map(x => {
+      ("" + x.cityName, 1)
+    }).reduceByKey(_+_)// 加1
+      .foreachRDD(rdd => {
+      rdd.foreachPartition(partitionRecords => {
+        val list = new ListBuffer[CityCount]
+        partitionRecords.foreach(pair => {
+          list.append(CityCount(pair._1, pair._2))
+        })
+        CityCountDAO.save(list)
+      })
+    })
+
+    // 按天统计访问次数
+    cleanData.map(x => {
+      ("" + x.time, 1)
+    }).reduceByKey(_+_)// 加1
+      .foreachRDD(rdd => {
+      rdd.foreachPartition(partitionRecords => {
+        val list = new ListBuffer[ClickByDateCount]
+        partitionRecords.foreach(pair => {
+          list.append(ClickByDateCount(pair._1, pair._2))
+        })
+        ClickByDateCountDAO.save(list)
       })
     })
 

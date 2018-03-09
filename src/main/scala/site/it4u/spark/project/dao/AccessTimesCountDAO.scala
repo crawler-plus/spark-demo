@@ -19,6 +19,7 @@ object AccessTimesCountDAO {
     for(ele <- list) {
       jedis.incrBy(ele.clickKey, ele.count)
     }
+
     RedisUtil.returnResource(jedis)
   }
 }
